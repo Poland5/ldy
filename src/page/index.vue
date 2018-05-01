@@ -28,11 +28,12 @@ export default {
   data() {
     return {
       products:[],
+      tmpProducts:[],
       tableData: [],
       ldyUrl:'',
       ldyTitle:'',
       typeTitle:'',
-      conditions:[]
+      conditions: new Array(2)
     }
   },
   components: {
@@ -40,7 +41,12 @@ export default {
   },
   methods: {
     async getList(){
-      const res = this.products;
+      let res;
+      if(this.tmpProducts.length){
+        res = this.tmpProducts;
+      }else{
+        res = this.products;
+      }
       this.tableData = [];
         if(res){
           res.forEach((item,index) => {
@@ -56,57 +62,36 @@ export default {
       }
     },
     toFilter(products, condition){
-      if(this.conditions.length){
-        this.conditions.forEach(item => {
-          console.log(item.value === condition.value);
-          
-          if(item.value === condition.value){
-            return;
-          }else{
-            this.conditions.push(condition);
-          }
-        })
-      }else{
-        this.conditions.push(condition);
-      }
-      console.log(this.conditions);
-      
       const ProductFilter = {
         matchFilter: function(products, match){
-          // console.log("match");
           if(products.length == 0){
             return products;
           }else{
-            products = products.filter((item,index) => {
-            // console.log(item.name);
-            
-            //  return item.name === (match[index].value) !== -1;
+             return products.filter((item,index) => {
+             return item.name.indexOf(match.value) !== -1;
             })
-            return products;
           }
         },
         likeFilter: function(products, like){
-          // console.log("like");
           let tmpProducts = [];
           if(like.length == 0){
             tmpProducts = products
           }else{
             tmpProducts = products.filter(item => {
-              item.name.indexOf(like.value) !== -1;
+              return item.name.indexOf(like.value) !== -1;
             })
             return tmpProducts;
           }
         }
       }
-      // this.conditions.forEach((item, index) => {
-      //   const key = item.type;
-      //   console.log(key);
-        
-      //   if(ProductFilter.hasOwnProperty(key + 'Filter') && typeof ProductFilter[key + 'Filter'] === 'function'){
-      //     products = ProductFilter[key + 'Filter'](products, conditions);
-      //   }
-      //  })
-      return products;
+      this.conditions.forEach((item, index) => {
+        const key = item.type;
+        if(ProductFilter.hasOwnProperty(key + 'Filter') && typeof ProductFilter[key + 'Filter'] === 'function'){
+          products = ProductFilter[key + 'Filter'](products, condition);
+        }
+       })
+      this.tmpProducts = products;
+      this.getList();     
     },
     openUrl(row){
       window.location.href = row.url;
@@ -117,8 +102,8 @@ export default {
         type:'match',
         value:msg
       }
-      // this.conditions.push(condition)
-      this.toFilter(this.products, condition);
+      this.conditions[0] = condition;
+      this.toFilter(this.products, this.conditions[0]);
     },
     listen_type(msg){
       this.typeTitle = msg;
@@ -126,8 +111,8 @@ export default {
         type:'like', 
         value:msg
       }
-      // this.conditions.push(condition);
-      this.toFilter(this.products, condition);
+      this.conditions[1] = condition;
+      this.toFilter(this.products, this.conditions[1]);
     }
   },
   mounted(){
